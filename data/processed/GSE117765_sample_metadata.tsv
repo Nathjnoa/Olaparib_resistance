@@ -1,0 +1,7 @@
+sample_id	sample_title	geo_accession	condition
+PEO1_Adherent_1.tpm	PEO1_Adherent_1	GSM3308399	Parental
+PEO1_Adherent_2.tpm	PEO1_Adherent_2	GSM3308400	Parental
+PEO1_Clone10.tpm	PEO1_Clone10	GSM3308403	Resistant
+PEO1_Clone18.tpm	PEO1_Clone18	GSM3308404	Resistant
+PEO1_Clone4.tpm	PEO1_Clone4	GSM3308401	Resistant
+PEO1_Clone5.tpm	PEO1_Clone5	GSM3308402	Resistant
