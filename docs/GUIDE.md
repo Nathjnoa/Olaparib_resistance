@@ -75,6 +75,44 @@ Esta es la pregunta obligatoria de cualquier meta-análisis antes de integrar na
 
 ---
 
+### Figura 2: ¿Qué pregunta responde?
+
+**Pregunta:** *¿Existe una firma transcriptómica compartida entre las 3 líneas celulares, o los cambios son mayoritariamente específicos de cada contexto?*
+
+Esta pregunta es la continuación directa de la Figura 1. Una vez validado que los tres datasets tienen señal, la pregunta natural es si esa señal apunta a los mismos genes. La respuesta tiene implicaciones metodológicas: si la mayoría de los genes son específicos de dataset, la intersección simple subestima la biología compartida y se necesita un enfoque más sofisticado (meta-análisis).
+
+**Por qué cada panel:**
+
+- **Paneles A y B (UpSet UP y DOWN):** los UpSet plots son superiores a los diagramas de Venn para conjuntos grandes porque muestran el tamaño exacto de cada combinación de solapamiento. La primera lectura es inmediata: las barras más grandes corresponden a genes exclusivos de A2780, lo que confirma que la mayoría del cambio transcriptómico es específico de modelo. Las barras de triple intersección (30 UP, 35 DOWN) son pequeñas pero existen — esos 65 genes superaron el umbral en los 3 datasets independientes, lo cual es un criterio muy estricto dado el bajo poder estadístico de PEO1 (n=4).
+
+- **Panel C (heatmap de la triple intersección):** los 65 genes compartidos se visualizan en todas las muestras de los 3 datasets (26 columnas en total), con Z-score calculado dentro de cada dataset para hacer las escalas comparables (FPKM, TPM y counts no son directamente equiparables). El resultado es coherente: los genes UP muestran azul en parentales y rojo en resistentes en los 3 contextos, y los DOWN muestran el patrón inverso. Esto confirma que los 65 genes no son un artefacto de umbral — tienen dirección consistente.
+
+**Lógica de secuencia:** la Figura 2 establece que a nivel de gen individual la convergencia es limitada. Esto prepara al lector para preguntarse: ¿y a nivel de pathways? La Figura 3 responde esa pregunta.
+
+**Script:** `scripts/07_fig2_overlap.R`
+**Output:** `results/figures/fig2/Fig2.pdf` + `Fig2.png`
+
+---
+
+### Figura 3: ¿Qué pregunta responde?
+
+**Pregunta:** *¿Los cambios transcriptómicos en resistencia a olaparib convergen en los mismos programas biológicos a través de los 3 modelos, o son también mayoritariamente específicos de cada línea?*
+
+Esta pregunta surge directamente de la Figura 2. La intersección a nivel de gen es pequeña (65/~7500), pero los genes pueden pertenecer a los mismos pathways aunque no sean exactamente los mismos. GSEA trabaja con toda la lista rankeada — no requiere que un gen individual sea significativo en los 3 datasets, solo que el pathway tienda colectivamente hacia arriba o abajo. Esto tiene mucho más poder estadístico con n pequeño.
+
+**Por qué cada panel:**
+
+- **Paneles A, B, C (lollipops por dataset):** cada panel muestra los Hallmarks más enriquecidos/depleted en resistentes vs parentales para cada dataset por separado (FDR < 0.05, top 5 por dirección). Los ejes X son idénticos en los 3 paneles para permitir comparación visual directa de magnitudes. La heterogeneidad es inmediatamente visible: A2780 sube E2F/MYC (proliferación), PEO1 sube TNFA-NFKB e inhibe respuesta estrogénica, UWB sube EMT y suprime masivamente los programas de interferón. Son tres paisajes de pathway completamente distintos.
+
+- **Panel D (heatmap NES integrado):** muestra los 17 Hallmarks significativos en ≥2 datasets (FDR < 0.1) en una sola vista. Las filas son los 3 datasets, las columnas son pathways agrupados por clustering. El código de color (NES: rojo = activado en resistentes, azul = suprimido) más los asteriscos de significancia permiten leer de un vistazo qué pathways son consistentes y cuáles son heterogéneos. La anotación de BRCA status conecta visualmente con el diseño del estudio: UWB (BRCA1-def, verde) tiene un perfil de NES opuesto a A2780 y PEO1 en varios pathways clave (especialmente respuesta a interferón). Los asteriscos (FDR < 0.05) y puntos (FDR < 0.1) se explican en el pie de figura.
+
+**Hallazgo principal:** la convergencia a nivel de pathway es mayor que a nivel de gen, pero la heterogeneidad sigue siendo alta, especialmente entre UWB (BRCA1-def) y las otras dos líneas. Esto sugiere que el contexto BRCA modifica sustancialmente los mecanismos de resistencia empleados.
+
+**Script:** `scripts/08_fig3_hallmarks.R`
+**Output:** `results/figures/fig3/Fig3.pdf` + `Fig3.png`
+
+---
+
 ## Paso 2: Intersección de DEGs
 
 ### ¿Qué se hace?

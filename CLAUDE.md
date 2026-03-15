@@ -91,33 +91,26 @@ La historia del paper sigue esta secuencia lógica:
 **Paneles:** A = diagrama de diseño | B = 3 PCAs | C = 3 volcanos | D = conteo de DEGs por dataset
 **Decisiones de estilo:** double_col 200mm, leyendas fuera a la derecha del último panel de cada fila, sin columna "Method" en Panel A (va en la sección Methods del paper). Ver lógica completa en `docs/GUIDE.md` → sección "Figura 1".
 
-### Figura 2 — PENDIENTE (próxima sesión)
+### Figura 2 — COMPLETADA
 
-**Script a crear:** `scripts/07_fig2_overlap.R`
+**Script:** `scripts/07_fig2_overlap.R`
+**Output:** `results/figures/fig2/Fig2.pdf` + `Fig2.png`
 **Pregunta:** *¿Existe una firma transcriptómica compartida entre las 3 líneas, o los cambios son mayoritariamente específicos de cada contexto?*
+**Paneles:** A = UpSet DEGs UP | B = UpSet DEGs DOWN | C = Heatmap 65 genes triple intersección (26 muestras, Z-score within-dataset)
+**Decisiones de estilo:** double_col 200×260 mm, UpSet con `ComplexHeatmap::upset()` (colores por dataset en set names), heatmap con anotaciones Dataset + Condition + BRCA status. Ver lógica completa en `docs/GUIDE.md` → sección "Figura 2".
 
-**Paneles planificados:**
+### Figura 3 — COMPLETADA
 
-| Panel | Fuente | Qué muestra |
-|-------|--------|-------------|
-| A | `results/figures/upset/DEGs_UP_UpSet_A2780_UWB_PEO1.png` (re-generar con tema unificado) | Estructura de solapamiento UP: exclusivos de 1 dataset, pares, triple |
-| B | `results/figures/upset/DEGs_DOWN_UpSet_A2780_UWB_PEO1.png` (re-generar) | Ídem DOWN |
-| C | **NUEVO — generar** | Heatmap ComplexHeatmap de los ~65 genes de la triple intersección, con todas las muestras de los 3 datasets, anotadas por dataset + condición |
+**Script:** `scripts/08_fig3_hallmarks.R`
+**Output:** `results/figures/fig3/Fig3.pdf` + `Fig3.png`
+**Pregunta:** *¿Convergen los cambios transcriptómicos en los mismos programas biológicos a través de los 3 modelos?*
+**Paneles:** A/B/C = lollipops GSEA Hallmarks por dataset (top 5 por dirección, FDR<0.05, ejes X unificados) | D = heatmap NES integrado transpuesto (datasets=filas, pathways=columnas), 17 Hallmarks con FDR<0.1 en ≥2 datasets, asteriscos de significancia, anotación BRCA status
+**Decisiones de estilo:** double_col 200×190 mm, pathways abreviados, heatmap transpuesto para aprovechar ancho horizontal. Ver lógica completa en `docs/GUIDE.md` → sección "Figura 3".
 
-**Datos disponibles para Panel C:**
-
-- Genes: `results/tables/venn/DEGs_UP_triple_intersection_A2780_UWB_PEO1.tsv` + `DEGs_DOWN_triple_intersection_A2780_UWB_PEO1.tsv`
-- Expresión: `data/processed/GSE153867_A2780_FPKM.tsv` (A2780); re-leer raw para PEO1 y UWB (misma lógica que `01_differential_expression.R`)
-
-**Estilo:** mismo `theme_pub()` de Fig1, mismo preset double_col 200mm, leyendas fuera a la derecha. Los heatmaps individuales por dataset (script `02_2`) van a **suplementario**, no a figura principal.
-
-**Nota UpSet:** el UpSet plots actualmente usan el paquete `UpSetR`. Re-generar con `ComplexHeatmap::upset()` o `ggupset` para tener control total sobre estilo y que sea consistente con el resto de las figuras.
-
-### Figuras 3–6 — Por planificar en sesiones futuras
+### Figuras 4–6 — Por planificar en sesiones futuras
 
 Fuentes disponibles (ya generadas por el pipeline):
 
-- Fig 3 (GSEA Hallmarks): `results/figures/gsea_hallmarks/` — lollipops por dataset + heatmap NES integrado
 - Fig 4 (GSVA): `results/figures/gsva_heatmaps/Fig3A_*` + `Fig3B_*`
 - Fig 5 (Meta-análisis): `results/figures/meta_analysis/` — MetaVolcano + MetaLollipop + forest plots
 - Fig 6 (Meta-GSEA): `results/figures/meta_gsea/` — lollipops Hallmarks + Reactome
