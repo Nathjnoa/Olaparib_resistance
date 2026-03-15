@@ -1,18 +1,56 @@
-name: proyecto_env
+# Olaparib Resistance Project
+# Pipeline de expresión diferencial, GSEA, GSVA y meta-análisis
+#
+# Ambiente recomendado: omics-R (ya instalado)
+# Activar con: conda activate omics-R
+#
+# Si necesitas crear un ambiente aislado:
+#   conda env create -f env/environment.yml
+#   conda activate olaparib_env
+
+name: olaparib_env
 channels:
   - conda-forge
   - bioconda
+  - defaults
+
 dependencies:
-  - python=3.11
-  - r-base
+  # Base R
+  - r-base>=4.4
   - r-tidyverse
+  - r-data.table
+
+  # Expresión diferencial
   - bioconductor-deseq2
   - bioconductor-edger
   - bioconductor-limma
-  - numpy
-  - pandas
-  - scipy
-  - scikit-learn
-  - matplotlib
-  - seaborn
-  - biopython
+
+  # Enriquecimiento funcional
+  - bioconductor-fgsea
+  - bioconductor-gsva
+  - bioconductor-clusterprofiler
+  - bioconductor-enrichplot
+
+  # Meta-análisis
+  - r-metafor
+
+  # Visualización
+  - r-ggplot2
+  - r-cowplot
+  - r-ggrepel
+  - r-pheatmap
+  - r-rcolorbrewer
+  - r-viridis
+  - r-scales
+  - r-patchwork
+  - r-venndiagram
+  - r-upsetr
+
+  # I/O
+  - r-openxlsx
+  - r-readxl
+  - r-optparse
+  - r-yaml
+
+# Paquetes adicionales (instalar via R si no disponibles en conda):
+#   BiocManager::install(c("ComplexHeatmap", "circlize", "msigdbr"))

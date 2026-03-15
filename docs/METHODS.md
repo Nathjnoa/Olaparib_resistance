@@ -1,69 +1,86 @@
 # METHODS
 
-## Diseno del estudio y datos
-Se analizaron datasets publicos de expresion para resistencia a olaparib en lineas celulares, incluyendo A2780 (FPKM), PEO1 (TPM) y UWB1.289 con estados BRCA1 deficiente y proficiente (counts). Los archivos crudos se organizaron por dataset en `data/raw/` y se procesaron de manera consistente para comparaciones Resistant vs Parental. Las fechas de descarga y fuentes exactas deben registrarse como `{FECHA_DESCARGA}` y `{FUENTE_DATOS}`.
+## Study design and datasets
 
-## Preprocesamiento y control de calidad
-Para matrices FPKM/TPM se aplico transformacion log2(x + 1). Se verifico la consistencia de columnas de muestra y se filtraron genes sin varianza antes de los modelos lineales. Para counts se uso un filtrado minimo por conteo y transformacion de estabilidad de varianza (VST) para visualizaciones. Se generaron PCA y graficas volcán para control visual de separacion entre condiciones.
+Three publicly available transcriptomic datasets of olaparib resistance in ovarian cancer cell lines were analyzed:
 
-## Expresion diferencial
-- A2780 y PEO1: se uso limma con diseno sin intercepto y contraste Resistant vs Parental.
-- UWB1.289: se uso DESeq2 con el diseño correspondiente y contrastes especificos por estado BRCA1.
-Los resultados se reportaron como log2FC, estadisticos t/z y FDR (BH). Se usaron umbrales FDR < 0.05 para listas principales y FDR < 0.10 para visualizaciones ampliadas.
+| Dataset | Cell line | BRCA1 status | Expression type | DE method | Parental (n) | Resistant (n) |
+|---------|-----------|--------------|-----------------|-----------|-------------|---------------|
+| GSE153867 | A2780 | WT | FPKM | limma | 8 | 8 |
+| GSE117765 | PEO1 | BRCA1-mut | TPM | limma | 2 | 4 clones |
+| GSE235980 | UWB1.289 | BRCA1-def | Counts | DESeq2 | 2 | 2 |
 
-## Analisis funcional
-Se realizo GSEA con Hallmarks de MSigDB para cada dataset a partir de rankings por estadistico de prueba (t o z). Se genero un heatmap integrado de NES para terminos recurrentes en multiples datasets. 
+All comparisons contrast Resistant vs Parental (olaparib-resistant subline/clone vs parental sensitive line). Raw files are stored in `data/raw/` organized by dataset.
 
-## GSVA y analisis diferencial de GSVA
-Se calcularon scores GSVA con colecciones Hallmarks y se integraron por dataset. Luego se aplico limma a los scores GSVA para estimar diferencias Resistant vs Parental, y se generaron heatmaps a nivel de muestra y a nivel integrado de logFC.
+**Note on UWB1.289**: Only BRCA1-deficient samples (n=2 parental + 2 resistant) were included. BRCA1-proficient sublines from the same GEO entry were excluded because they represent a distinct resistance mechanism (BRCA1 reversion) that is biologically incoherent with the BRCA1-deficient context studied here. Including proficient samples would double-count UWB biology and introduce a heterogeneous mixture of resistance mechanisms into the meta-analysis.
 
-## Metaanalisis
-Se construyo una tabla long con log2FC y error estandar por gen y dataset, y se aplico un metaanalisis de efectos aleatorios (REML), con estimaciones de heterogeneidad (I2, tau2) y FDR a nivel global. Se exportaron firmas UP/DOWN, rankings y tablas de concordancia.
+## Preprocessing and quality control
 
-## Visualizacion
-Se generaron volcanos, PCA, Venn/UpSet, heatmaps (ComplexHeatmap), lollipop plots y forest plots. Las figuras se exportaron principalmente en PNG y PDF con tamaños definidos en cada script.
+For FPKM/TPM matrices, log2(x + 1) transformation was applied before all linear modeling. Genes with zero or near-zero variance were filtered before fitting. For count data (UWB1.289), minimum count filtering was applied and variance-stabilizing transformation (VST) was used for visualization. PCA and volcano plots were generated for visual confirmation of condition separation.
 
-## Software y entorno computacional
-- R `{R_VERSION}` con Bioconductor `{BIOC_VERSION}`.
-- Paquetes clave: limma `{LIMMA_VERSION}`, DESeq2 `{DESEQ2_VERSION}`, GSVA `{GSVA_VERSION}`, fgsea `{FGSEA_VERSION}`, clusterProfiler `{CLUSTERPROFILER_VERSION}`, ComplexHeatmap `{COMPLEXHEATMAP_VERSION}`.
-- El entorno conda se define en `env/environment.yml`.
+## Differential expression
 
-## Reproducibilidad
-El pipeline se ejecuta mediante scripts R reproducibles con rutas controladas por la variable `OLAPARIB_RESISTANCE_DIR`. Se recomienda registrar el entorno y conservar un manifest con inputs, parametros y outputs por corrida.
+### limma (A2780, PEO1)
 
-### Checklist de reproducibilidad
-- [ ] Registrar `sessionInfo()` y versiones de paquetes.
-- [ ] Guardar los paths exactos de `data/raw/`.
-- [ ] Registrar parametros (FDR, log2FC, top_n).
-- [ ] Ejecutar los scripts en el orden del `docs/RUNBOOK.md`.
+Standard limma was applied to log2-transformed FPKM (A2780) and log2-transformed TPM (PEO1). A design matrix without intercept was constructed and a Resistant-vs-Parental contrast was estimated. Empirical Bayes shrinkage (`eBayes`) was applied; statistical output includes moderated t-statistics, log2FC, and FDR (Benjamini-Hochberg).
 
-### Template de comandos
-```bash
-export OLAPARIB_RESISTANCE_DIR=/path/to/olaparib_resistance
-Rscript scripts/01_1_run_olaparib_all.R
-Rscript scripts/02_2_venn_DEGs_up_down.R
-Rscript scripts/02_2_UpSet.R
-Rscript scripts/02_3_heatmaps_ComplexHeatmap_topDEGs.R
-Rscript scripts/03_1_gsea_hallmarks.R
-Rscript scripts/03_2_gsea_hallmarks_heatmap_integrated.R
-Rscript scripts/04_1_GSVA.R
-Rscript scripts/04_2_GSVA_limma_DE.R
-Rscript scripts/04_3_gsva_heatmap_per_sample_Fig3A.R
-Rscript scripts/04_4_gsva_logFC_heatmap_integrated_Fig3B.R
-Rscript scripts/05_1_build_meta_input.R
-Rscript scripts/05_2_meta_analysis_random_effects.R
-Rscript scripts/05_3_export_meta_results.R
-Rscript scripts/05_4_meta_plots_volcano_lollipop.R
-Rscript scripts/05_5_metaGSEA_hallmarks_reactome.R
-Rscript scripts/05_6_meta_forest_plots.R
-```
+**Rationale for limma on log2(FPKM+1) and log2(TPM+1)**: The voom transformation is specifically designed for raw count data, where mean-variance relationships follow a Poisson/negative-binomial model. FPKM and TPM are pre-normalized abundance estimates on a continuous scale; applying voom to these values is methodologically incorrect. Standard limma on log-transformed continuous expression data is the recommended approach for pre-normalized data (Ritchie et al., 2015 *Nucleic Acids Res*; Law et al., 2014 *Genome Biol*).
 
-### Parametros clave
-| Parametro | Significado | Valor |
-| --- | --- | --- |
-| `FDR` | Umbral para significancia | 0.05 (principal), 0.10 (visualizaciones) |
-| `log2FC` | Corte para DEGs en intersecciones | 0.584 (equivalente a FC 1.5) |
-| `minGS` / `maxGS` | Tamano de gene set en GSEA/GSVA | 15 / 500 |
-| `top_n_plot` | Terminos mostrados en lollipop | 10 (por direccion) |
-| `metodo_meta` | Modelo de metaanalisis | RE (REML) |
+### DESeq2 (UWB1.289 BRCA-deficient)
+
+DESeq2 was run on the 4 BRCA-deficient samples (2 parental, 2 resistant). The design formula `~ resistance` was used, with `resistance` as a two-level factor (Parental/Resistant). Log2FC shrinkage was applied using `lfcShrink()` with the apeglm method (`coef = "resistance_Resistant_vs_Parental"`). The SE output from `lfcShrink()` was used directly as input SE for the meta-analysis.
+
+## Functional enrichment — GSEA
+
+Gene Set Enrichment Analysis (GSEA) was performed per dataset using the Hallmarks collection (MSigDB H, n=50 gene sets). Gene lists were ranked by: t-statistic for limma datasets; z = log2FC / lfcSE for DESeq2. GSEA was run with `clusterProfiler::GSEA()` (minGS=15, maxGS=500, eps=0). Lollipop plots show top significant terms (FDR < 0.10) and an integrated normalized enrichment score (NES) heatmap displays terms recurrent in ≥2 datasets.
+
+## Functional enrichment — GSVA
+
+Pathway activity scores were computed per sample using GSVA (`GSVA::gsva()`, Gaussian kernel for continuous expression, Hallmarks collection). Per-dataset limma was then applied to the GSVA score matrix to estimate differential pathway activity (Resistant vs Parental). Pathways recurrent in ≥2 datasets (FDR < 0.10) were selected for integrated visualizations.
+
+## Meta-analysis
+
+A gene-level random-effects meta-analysis was performed across the 3 datasets using `metafor::rma.uni()` with REML estimation. For each gene, the effect size (log2FC) and its SE were extracted:
+
+- **limma datasets**: SE = |log2FC| / |t| (exact relationship for the moderated t-statistic)
+- **DESeq2 dataset**: SE = lfcSE from `lfcShrink()` (direct output)
+
+For genes present in ≥2 datasets, the REML model was fit; a DerSimonian-Laird fallback was used if Fisher scoring failed to converge. Heterogeneity was quantified via I² and τ². Fixed-effects estimates were also computed for sensitivity comparison.
+
+**Interpretation of I²**: I² values ≥50% indicate substantial heterogeneity, which may reflect dataset-specific biology, different cell line backgrounds, or technical variation. In this 3-study meta-analysis (k=2–3 per gene), I² estimates are inherently unstable; heterogeneity statistics should be interpreted with caution.
+
+Downstream signatures (UP/DOWN gene lists, high-confidence set: FDR < 0.05 + I² < 50%, concordance scores) were exported. Meta-GSEA on the gene-level z-ranking was performed using `fgsea::fgseaMultilevel()` with Hallmarks and Reactome gene sets (minGS=15, maxGS=500, seed=1).
+
+**SE derivation note**: The approximation SE ≈ |log2FC| / |t| is exact for the moderated t-statistic in limma, where t = log2FC / SE by definition. This is the standard derivation used in multi-study transcriptomic meta-analyses.
+
+## Visualizations
+
+Volcano plots, PCA, Venn/UpSet diagrams, ComplexHeatmap heatmaps (Z-score and logFC), lollipop plots, and forest plots were generated. Figures were exported as PNG (300 DPI) and PDF. Thresholds used: FDR < 0.05 (primary significance), FDR < 0.10 (visualization), |log2FC| ≥ 0.584 (FC ≥ 1.5) for intersection lists.
+
+## Software and computational environment
+
+- R version: see `logs/sessionInfo_*.txt`
+- Bioconductor packages: limma, DESeq2, GSVA, clusterProfiler, fgsea, metafor, ComplexHeatmap, msigdbr
+- Full package versions: captured in `logs/sessionInfo_*.txt` at pipeline execution
+- Conda environment: `env/environment.yml`
+- All scripts source `scripts/00_config.R` for centralized parameters, thresholds, and sample IDs
+
+## Reproducibility checklist
+
+- [ ] Record `sessionInfo()` and package versions
+- [ ] Verify paths in `data/raw/` match expected filenames
+- [ ] Export `OLAPARIB_RESISTANCE_DIR` if running outside project root
+- [ ] Run scripts in the order listed in `docs/RUNBOOK.md`
+
+## Key parameters
+
+| Parameter | Description | Value |
+|-----------|-------------|-------|
+| `FDR_CUTOFF` | Primary significance threshold | 0.05 |
+| `FDR_CUTOFF_VIZ` | Visualization threshold | 0.10 |
+| `LOGFC_CUTOFF` | log2FC cutoff for intersection lists | 0.584 (FC ≥ 1.5) |
+| `MIN_GS` / `MAX_GS` | Gene set size limits (GSEA/GSVA) | 15 / 500 |
+| `TOP_N_GENES` | Top DEGs per direction (heatmaps) | 20 |
+| `TOP_N_PLOT` | Terms shown in lollipop plots | 10 |
+| Meta model | Meta-analysis estimator | RE (REML), DL fallback |
 

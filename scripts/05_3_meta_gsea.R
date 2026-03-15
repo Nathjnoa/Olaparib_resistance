@@ -1,37 +1,39 @@
 #!/usr/bin/env Rscript
 
+# ============================================================
+# 05_3_meta_gsea.R
+#
+# fGSEA on meta-analysis gene rankings (Hallmarks + Reactome):
+#   1. Load gene-level meta ranking (z-stat or beta)
+#   2. Run fgseaMultilevel for Hallmarks and Reactome gene sets
+#   3. Export TSV tables (per collection + combined)
+#   4. Optionally generate lollipop plots
+#
+# CLI: Rscript 05_3_meta_gsea.R [stat=z|beta] [padj_thr] [top_n_plot] [make_plots=0|1]
+# ============================================================
+
 suppressPackageStartupMessages({
   library(tidyverse)
   library(msigdbr)
   library(fgsea)
 })
 
-# ============================================================
-# Config paths
-# ============================================================
-proj_dir <- Sys.getenv("OLAPARIB_RESISTANCE_DIR", unset = "")
-if (!nzchar(proj_dir)) {
-  proj_dir <- "~/bioinfo/projects/olaparib_resistance"
-}
-proj_dir <- path.expand(proj_dir)
-if (!dir.exists(proj_dir)) {
-  stop("No existe el directorio del proyecto: ", proj_dir)
-}
-int_dir  <- file.path(proj_dir, "results", "tables", "integrated")
+source(file.path({f <- commandArgs(trailingOnly=FALSE); f <- grep("--file=",f,value=TRUE); if(length(f)) dirname(normalizePath(sub("--file=","",f[1]))) else path.expand("~/bioinfo/projects/olaparib_resistance/scripts")}, "00_config.R"))
+
+log_handle <- start_log("05_3_meta_gsea")
+
+int_dir     <- file.path(tables_dir, "integrated")
+out_tab_dir <- file.path(tables_dir, "meta_gsea")
+out_fig_dir <- file.path(figures_dir, "meta_gsea")
+dir.create(out_tab_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(out_fig_dir, showWarnings = FALSE, recursive = TRUE)
 
 rank_z_file    <- file.path(int_dir, "meta_DE_meta_rank_z.tsv")
 rank_beta_file <- file.path(int_dir, "meta_DE_meta_rank_beta.tsv")
 meta_file      <- file.path(int_dir, "meta_DE_random_effects.tsv")
 
-out_tab_dir <- file.path(proj_dir, "results", "tables", "meta_gsea")
-out_fig_dir <- file.path(proj_dir, "results", "figures", "meta_gsea")
-dir.create(out_tab_dir, showWarnings = FALSE, recursive = TRUE)
-dir.create(out_fig_dir, showWarnings = FALSE, recursive = TRUE)
-
 # ============================================================
-# Parameters (CLI)
-# Uso:
-#   Rscript scripts/11_metaGSEA_hallmarks_reactome.R [stat=z|beta] [padj_thr] [top_n_plot] [make_plots=0|1]
+# CLI parameters
 # ============================================================
 stat_choice <- "z"
 padj_thr    <- 0.10
@@ -65,112 +67,89 @@ make_stats <- function(df, stat_col, gene_col = "gene_symbol") {
     ) %>%
     filter(!is.na(gene), gene != "", !is.na(stat), is.finite(stat))
 
-  # Resolver duplicados por gen: quedarnos con el mayor |stat|
   tmp2 <- tmp %>%
     group_by(gene) %>%
     summarise(stat = stat[which.max(abs(stat))], .groups = "drop")
 
   stats <- tmp2$stat
   names(stats) <- tmp2$gene
-
-  # Jitter determinístico minúsculo para evitar empates exactos
-  stats <- stats + seq_along(stats) * 1e-12
+  stats <- stats + seq_along(stats) * 1e-12  # deterministic jitter for ties
   sort(stats, decreasing = TRUE)
 }
 
 get_pathways_msigdbr <- function(collection, subcollection = NULL) {
   msig <- msigdbr(
-    species = "Homo sapiens",
-    collection = collection,
+    species       = "Homo sapiens",
+    collection    = collection,
     subcollection = subcollection
   )
-
   pathways <- msig %>%
-    select(gs_name, gene_symbol) %>%
+    dplyr::select(gs_name, gene_symbol) %>%
     mutate(gene_symbol = as.character(gene_symbol)) %>%
     filter(!is.na(gene_symbol), gene_symbol != "") %>%
     split(x = .$gene_symbol, f = .$gs_name)
-
   lapply(pathways, unique)
 }
 
-run_fgsea <- function(pathways, stats, minSize = 15, maxSize = 500) {
+run_fgsea <- function(pathways, stats) {
   fgseaMultilevel(
     pathways = pathways,
     stats    = stats,
-    minSize  = minSize,
-    maxSize  = maxSize
+    minSize  = MIN_GS,
+    maxSize  = MAX_GS
   ) %>%
     as_tibble() %>%
     arrange(padj, desc(abs(NES)))
 }
 
-# ---- Etiquetas "bonitas" ----
 clean_pathway_label <- function(x, wrap_width = 40, truncate_chars = 120) {
   lab <- x %>%
-    # Hallmarks / Reactome prefijos
-    str_replace("^HALLMARK_", "") %>%
-    str_replace("^REACTOME_", "") %>%
-    str_replace("^REACTOME\\s+", "") %>%
-    str_replace("^Reactome\\s+", "") %>%
-    # separadores
-    str_replace_all("_", " ") %>%
-    str_squish() %>%
-    str_to_title()
+    stringr::str_replace("^HALLMARK_", "") %>%
+    stringr::str_replace("^REACTOME_", "") %>%
+    stringr::str_replace("^REACTOME\\s+", "") %>%
+    stringr::str_replace("^Reactome\\s+", "") %>%
+    stringr::str_replace_all("_", " ") %>%
+    stringr::str_squish() %>%
+    stringr::str_to_title()
 
-  # acrónimos comunes
   lab <- lab %>%
-    str_replace_all("\\bE2f\\b", "E2F") %>%
-    str_replace_all("\\bNfkb\\b", "NFKB") %>%
-    str_replace_all("\\bIl\\s*\\b", "IL") %>%
-    str_replace_all("\\bJak\\b", "JAK") %>%
-    str_replace_all("\\bStat\\b", "STAT") %>%
-    str_replace_all("\\bDna\\b", "DNA") %>%
-    str_replace_all("\\bRna\\b", "RNA") %>%
-    str_replace_all("\\bTnf\\b", "TNF") %>%
-    str_replace_all("\\bUv\\b", "UV")
+    stringr::str_replace_all("\\bE2f\\b",   "E2F")  %>%
+    stringr::str_replace_all("\\bNfkb\\b",  "NFKB") %>%
+    stringr::str_replace_all("\\bIl\\s*\\b","IL")   %>%
+    stringr::str_replace_all("\\bJak\\b",   "JAK")  %>%
+    stringr::str_replace_all("\\bStat\\b",  "STAT") %>%
+    stringr::str_replace_all("\\bDna\\b",   "DNA")  %>%
+    stringr::str_replace_all("\\bRna\\b",   "RNA")  %>%
+    stringr::str_replace_all("\\bTnf\\b",   "TNF")  %>%
+    stringr::str_replace_all("\\bUv\\b",    "UV")
 
-  # truncado suave si algún nombre es ridículamente largo
   if (!is.null(truncate_chars) && is.finite(truncate_chars)) {
     lab <- ifelse(nchar(lab) > truncate_chars,
-                  paste0(substr(lab, 1, truncate_chars - 1), "…"),
+                  paste0(substr(lab, 1, truncate_chars - 1), "\u2026"),
                   lab)
   }
-
-  str_wrap(lab, width = wrap_width)
+  stringr::str_wrap(lab, width = wrap_width)
 }
 
-# ---- Plot lollipop: top UP + top DOWN entre padj<thr ----
-plot_lollipop_pathways <- function(res,
-                                   title,
-                                   out_png,
-                                   out_pdf,
-                                   top_n_each = 10,
-                                   padj_thr = 0.10,
-                                   wrap_width = 40,
-                                   truncate_chars = 120,
-                                   width = 10,
-                                   height = 6,
+plot_lollipop_pathways <- function(res, title, out_png, out_pdf,
+                                   top_n_each = 10, padj_thr = 0.10,
+                                   wrap_width = 40, truncate_chars = 120,
+                                   width = 10, height = 6,
                                    mlog10_cap_max = 12) {
-
   df <- res %>%
     filter(!is.na(padj), !is.na(NES)) %>%
     mutate(
-      direction = if_else(NES > 0, "UP", "DOWN"),
-      mlog10 = -log10(pmax(padj, 1e-300)),
+      direction  = if_else(NES > 0, "UP", "DOWN"),
+      mlog10     = -log10(pmax(padj, 1e-300)),
       mlog10_cap = pmin(mlog10, mlog10_cap_max)
     )
 
   df_sig <- df %>% filter(padj < padj_thr)
-
   n_up_sig   <- sum(df_sig$direction == "UP")
   n_down_sig <- sum(df_sig$direction == "DOWN")
 
-  # helper: top por padj y luego |NES|
   pick_top <- function(dat, n_show) {
-    dat %>%
-      arrange(padj, desc(abs(NES))) %>%
-      slice_head(n = n_show)
+    dat %>% arrange(padj, desc(abs(NES))) %>% slice_head(n = n_show)
   }
 
   top_up   <- df_sig %>% filter(direction == "UP")   %>% pick_top(top_n_each)
@@ -179,7 +158,7 @@ plot_lollipop_pathways <- function(res,
   plot_df <- bind_rows(top_down, top_up) %>%
     distinct(pathway, .keep_all = TRUE) %>%
     mutate(pathway_label = clean_pathway_label(pathway,
-                                               wrap_width = wrap_width,
+                                               wrap_width     = wrap_width,
                                                truncate_chars = truncate_chars))
 
   if (nrow(plot_df) == 0) {
@@ -187,13 +166,10 @@ plot_lollipop_pathways <- function(res,
     return(invisible(NULL))
   }
 
-  # Orden en Y: DOWN arriba (más negativo) y UP abajo (más positivo), manteniendo selección
-  levels_raw <- c(rev(top_down$pathway), rev(top_up$pathway))
+  levels_raw   <- c(rev(top_down$pathway), rev(top_up$pathway))
   if (length(levels_raw) == 0) levels_raw <- plot_df$pathway
-
   levels_clean <- clean_pathway_label(levels_raw,
-                                      wrap_width = wrap_width,
-                                      truncate_chars = truncate_chars)
+                                      wrap_width = wrap_width, truncate_chars = truncate_chars)
 
   plot_df <- plot_df %>%
     mutate(pathway_label = factor(pathway_label, levels = levels_clean))
@@ -204,7 +180,7 @@ plot_lollipop_pathways <- function(res,
 
   subtitle_txt <- paste0(
     "Top ", top_n_each, " UP + Top ", top_n_each, " DOWN (padj<", padj_thr, "). ",
-    "Disponibles: UP=", n_up_sig, ", DOWN=", n_down_sig
+    "Available: UP=", n_up_sig, ", DOWN=", n_down_sig
   )
 
   p <- ggplot(plot_df, aes(x = NES, y = pathway_label, color = direction)) +
@@ -215,21 +191,20 @@ plot_lollipop_pathways <- function(res,
     coord_cartesian(xlim = c(-xlim, xlim)) +
     scale_color_manual(values = c("UP" = "#D81B60", "DOWN" = "#1E88E5"),
                        name = "Direction") +
-    scale_size_continuous(name = expression(-log[10]*"(FDR)"),
-                          range = c(2.2, 7)) +
+    scale_size_continuous(name = expression(-log[10]*"(FDR)"), range = c(2.2, 7)) +
     labs(title = title, subtitle = subtitle_txt, x = "NES", y = NULL) +
     theme_classic(base_size = 13) +
     theme(
-      plot.title = element_text(face = "bold", size = 20, hjust = 0.5),
+      plot.title    = element_text(face = "bold", size = 20, hjust = 0.5),
       plot.subtitle = element_text(size = 11.5, hjust = 0.5),
-      axis.title.x = element_text(size = 14),
-      axis.text.y = element_text(size = 10.5),
-      axis.text.x = element_text(size = 11.5),
-      legend.title = element_text(size = 12.5),
-      legend.text = element_text(size = 11.5),
+      axis.title.x  = element_text(size = 14),
+      axis.text.y   = element_text(size = 10.5),
+      axis.text.x   = element_text(size = 11.5),
+      legend.title  = element_text(size = 12.5),
+      legend.text   = element_text(size = 11.5),
       legend.position = "right",
-      legend.box = "vertical",
-      plot.margin = margin(10, 18, 10, 12)
+      legend.box    = "vertical",
+      plot.margin   = margin(10, 18, 10, 12)
     ) +
     guides(
       color = guide_legend(order = 1, override.aes = list(size = 4)),
@@ -242,20 +217,20 @@ plot_lollipop_pathways <- function(res,
 }
 
 # ============================================================
-# Load ranking (prefer export)
+# Load ranking
 # ============================================================
-rank_df <- NULL
+rank_df  <- NULL
 stat_col <- NULL
 
 if (stat_choice == "z" && file.exists(rank_z_file)) {
   message("Usando ranking Z: ", rank_z_file)
   rank_df <- readr::read_tsv(rank_z_file, show_col_types = FALSE)
 
-  if ("z_meta" %in% names(rank_df)) stat_col <- "z_meta"
-  else if ("z" %in% names(rank_df)) stat_col <- "z"
-  else if ("stat" %in% names(rank_df)) stat_col <- "stat"
-  else if (all(c("beta_meta", "se_meta") %in% names(rank_df))) {
-    rank_df <- rank_df %>% mutate(z_meta = beta_meta / se_meta)
+  if ("z_meta" %in% names(rank_df))       stat_col <- "z_meta"
+  else if ("z" %in% names(rank_df))       stat_col <- "z"
+  else if ("stat" %in% names(rank_df))    stat_col <- "stat"
+  else if (all(c("beta_meta","se_meta") %in% names(rank_df))) {
+    rank_df  <- rank_df %>% mutate(z_meta = beta_meta / se_meta)
     stat_col <- "z_meta"
   } else stop("No encuentro columna z en ", rank_z_file)
 
@@ -263,12 +238,12 @@ if (stat_choice == "z" && file.exists(rank_z_file)) {
   message("Usando ranking BETA: ", rank_beta_file)
   rank_df <- readr::read_tsv(rank_beta_file, show_col_types = FALSE)
 
-  if ("beta_meta" %in% names(rank_df)) stat_col <- "beta_meta"
-  else if ("beta" %in% names(rank_df)) stat_col <- "beta"
+  if ("beta_meta" %in% names(rank_df))    stat_col <- "beta_meta"
+  else if ("beta" %in% names(rank_df))    stat_col <- "beta"
   else stop("No encuentro columna beta en ", rank_beta_file)
 
 } else {
-  message("No encontré ranking exportado para stat_choice=", stat_choice, ". Usando meta_DE_random_effects.tsv")
+  message("No encontré ranking exportado para stat=", stat_choice, ". Usando meta_DE_random_effects.tsv")
   stopifnot(file.exists(meta_file))
   rank_df <- readr::read_tsv(meta_file, show_col_types = FALSE)
 
@@ -276,9 +251,9 @@ if (stat_choice == "z" && file.exists(rank_z_file)) {
     if ("z_meta" %in% names(rank_df)) {
       stat_col <- "z_meta"
     } else if (all(c("beta_meta","se_meta") %in% names(rank_df))) {
-      rank_df <- rank_df %>% mutate(z_meta = beta_meta / se_meta)
+      rank_df  <- rank_df %>% mutate(z_meta = beta_meta / se_meta)
       stat_col <- "z_meta"
-    } else stop("No puedo construir z_meta (faltan z_meta o beta_meta+se_meta).")
+    } else stop("No puedo construir z_meta.")
   } else {
     if (!"beta_meta" %in% names(rank_df)) stop("No encuentro beta_meta en meta_DE_random_effects.tsv")
     stat_col <- "beta_meta"
@@ -292,82 +267,78 @@ message("Stats vector: n_genes=", length(stats),
         " | max=", signif(max(stats), 3))
 
 # ============================================================
-# Build pathways (Hallmarks + Reactome)
+# Build pathway gene sets
 # ============================================================
-message("Descargando MSigDB (msigdbr) para Hallmarks y Reactome...")
+message("Descargando MSigDB (msigdbr): Hallmarks + Reactome...")
 pathways_H <- get_pathways_msigdbr(collection = "H")
 pathways_R <- get_pathways_msigdbr(collection = "C2", subcollection = "CP:REACTOME")
-
 message("Pathways Hallmarks: ", length(pathways_H))
 message("Pathways Reactome:  ", length(pathways_R))
 
 # ============================================================
-# Run meta-GSEA
+# Run meta-GSEA (fgseaMultilevel, seed=1 for reproducibility)
 # ============================================================
 set.seed(1)
 
-message(">> Corriendo fgseaMultilevel: Hallmarks")
-res_H <- run_fgsea(pathways_H, stats, minSize = 15, maxSize = 500) %>%
-  mutate(collection = "HALLMARKS")
+message(">> fgseaMultilevel: Hallmarks")
+res_H <- run_fgsea(pathways_H, stats) %>% mutate(collection = "HALLMARKS")
 
-message(">> Corriendo fgseaMultilevel: Reactome")
-res_R <- run_fgsea(pathways_R, stats, minSize = 15, maxSize = 500) %>%
-  mutate(collection = "REACTOME")
+message(">> fgseaMultilevel: Reactome")
+res_R <- run_fgsea(pathways_R, stats) %>% mutate(collection = "REACTOME")
 
 # ============================================================
 # Export tables
 # ============================================================
-out_H <- file.path(out_tab_dir, paste0("metaGSEA_HALLMARKS_", toupper(stat_choice), ".tsv"))
-out_R <- file.path(out_tab_dir, paste0("metaGSEA_REACTOME_",  toupper(stat_choice), ".tsv"))
+out_H   <- file.path(out_tab_dir, paste0("metaGSEA_HALLMARKS_", toupper(stat_choice), ".tsv"))
+out_R   <- file.path(out_tab_dir, paste0("metaGSEA_REACTOME_",  toupper(stat_choice), ".tsv"))
+out_ALL <- file.path(out_tab_dir, paste0("metaGSEA_ALL_",       toupper(stat_choice), ".tsv"))
 
 readr::write_tsv(res_H, out_H)
 readr::write_tsv(res_R, out_R)
 
+res_ALL <- bind_rows(res_H, res_R) %>%
+  dplyr::select(collection, pathway, NES, pval, padj, size, leadingEdge)
+readr::write_tsv(res_ALL, out_ALL)
+
 message("✔ Hallmarks TSV: ", out_H)
 message("✔ Reactome TSV:  ", out_R)
-
-res_ALL <- bind_rows(res_H, res_R) %>%
-  select(collection, pathway, NES, pval, padj, size, leadingEdge)
-out_ALL <- file.path(out_tab_dir, paste0("metaGSEA_ALL_", toupper(stat_choice), ".tsv"))
-readr::write_tsv(res_ALL, out_ALL)
 message("✔ Combined TSV:  ", out_ALL)
 
 # ============================================================
 # Optional: lollipop plots
 # ============================================================
 if (make_plots == 1) {
-  message(">> Generando lollipop plots (top pathways)")
+  message(">> Generando lollipop plots...")
 
   plot_lollipop_pathways(
     res_H,
-    title   = paste0("Meta-GSEA Hallmarks (", stat_col, ")"),
-    out_png = file.path(out_fig_dir, paste0("meta_gsea_hallmarks_", stat_choice, "_lollipop.png")),
-    out_pdf = file.path(out_fig_dir, paste0("meta_gsea_hallmarks_", stat_choice, "_lollipop.pdf")),
-    top_n_each = top_n_plot,
-    padj_thr = padj_thr,
-    wrap_width = 36,
+    title          = paste0("Meta-GSEA Hallmarks (", stat_col, ")"),
+    out_png        = file.path(out_fig_dir, paste0("meta_gsea_hallmarks_", stat_choice, "_lollipop.png")),
+    out_pdf        = file.path(out_fig_dir, paste0("meta_gsea_hallmarks_", stat_choice, "_lollipop.pdf")),
+    top_n_each     = top_n_plot,
+    padj_thr       = padj_thr,
+    wrap_width     = 36,
     truncate_chars = 110,
-    width = 10,
-    height = 6,
+    width          = 10,
+    height         = 6,
     mlog10_cap_max = 12
   )
 
-  # Reactome: más ancho + wrap más agresivo para que no se “coma” el panel
   plot_lollipop_pathways(
     res_R,
-    title   = paste0("Meta-GSEA Reactome (", stat_col, ")"),
-    out_png = file.path(out_fig_dir, paste0("meta_gsea_reactome_", stat_choice, "_lollipop.png")),
-    out_pdf = file.path(out_fig_dir, paste0("meta_gsea_reactome_", stat_choice, "_lollipop.pdf")),
-    top_n_each = top_n_plot,
-    padj_thr = padj_thr,
-    wrap_width = 30,
+    title          = paste0("Meta-GSEA Reactome (", stat_col, ")"),
+    out_png        = file.path(out_fig_dir, paste0("meta_gsea_reactome_", stat_choice, "_lollipop.png")),
+    out_pdf        = file.path(out_fig_dir, paste0("meta_gsea_reactome_", stat_choice, "_lollipop.pdf")),
+    top_n_each     = top_n_plot,
+    padj_thr       = padj_thr,
+    wrap_width     = 30,
     truncate_chars = 120,
-    width = 13,
-    height = 7,
+    width          = 13,
+    height         = 7,
     mlog10_cap_max = 20
   )
 
-  message("✔ Lollipops guardados en: ", out_fig_dir)
+  message("✔ Lollipops -> ", out_fig_dir)
 }
 
-message(">> Meta-GSEA COMPLETADO.")
+stop_log(log_handle)

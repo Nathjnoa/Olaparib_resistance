@@ -1,3 +1,9 @@
 scripts/scripts_no_usados/
 
+data/
+results/
+logs/
+
 VennDiagram*.log
+*.Rhistory
+.Rproj.user/
