@@ -169,6 +169,7 @@ start_log <- function(script_name) {
 
 stop_log <- function(log_handle) {
   message("=== Done: ", Sys.time(), " ===")
+  print(sessionInfo())
   sink(type = "message")
   sink(type = "output")
   close(log_handle$con)

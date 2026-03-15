@@ -64,7 +64,8 @@ Rscript scripts/05_3_meta_gsea.R         # args optional: z 0.10 10 1
 - **SE approximation**: SE = |log2FC| / |t| (exact for limma t-statistic).
 - **REML meta-analysis**: DL fallback if Fisher scoring fails to converge.
 - **Duplicate gene policy**: smallest padj (DE/meta), max |stat| (GSEA rankings).
-- **set.seed(1)** in 05_3_meta_gsea.R for fgsea reproducibility.
+- **set.seed(42)** in scripts 01–04 (after start_log); **set.seed(1)** in 05_3_meta_gsea.R for fgsea reproducibility.
+- **sessionInfo()** printed automatically by stop_log() in 00_config.R — captured in every script's log.
 
 ## Optional environment variable
 

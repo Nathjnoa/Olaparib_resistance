@@ -22,6 +22,7 @@ suppressPackageStartupMessages({
 source(file.path({f <- commandArgs(trailingOnly=FALSE); f <- grep("--file=",f,value=TRUE); if(length(f)) dirname(normalizePath(sub("--file=","",f[1]))) else path.expand("~/bioinfo/projects/olaparib_resistance/scripts")}, "00_config.R"))
 
 log_handle <- start_log("02_2_heatmaps_topDEGs")
+set.seed(42)
 
 out_dir <- file.path(figures_dir, "heatmaps")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)

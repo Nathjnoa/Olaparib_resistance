@@ -20,6 +20,7 @@ suppressPackageStartupMessages({
 source(file.path({f <- commandArgs(trailingOnly=FALSE); f <- grep("--file=",f,value=TRUE); if(length(f)) dirname(normalizePath(sub("--file=","",f[1]))) else path.expand("~/bioinfo/projects/olaparib_resistance/scripts")}, "00_config.R"))
 
 log_handle <- start_log("02_1_deg_intersections")
+set.seed(42)
 
 dir.create(file.path(figures_dir, "venn"),  showWarnings = FALSE, recursive = TRUE)
 dir.create(file.path(figures_dir, "upset"), showWarnings = FALSE, recursive = TRUE)
