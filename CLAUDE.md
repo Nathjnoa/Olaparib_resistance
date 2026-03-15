@@ -67,6 +67,61 @@ Rscript scripts/05_3_meta_gsea.R         # args optional: z 0.10 10 1
 - **set.seed(42)** in scripts 01–04 (after start_log); **set.seed(1)** in 05_3_meta_gsea.R for fgsea reproducibility.
 - **sessionInfo()** printed automatically by stop_log() in 00_config.R — captured in every script's log.
 
+## Plan del Manuscrito
+
+Estado actual: análisis completo, en etapa de construcción de figuras de publicación.
+Figura en progreso: **Figura 2** (próxima a construir).
+
+### Narrativa del artículo
+
+La historia del paper sigue esta secuencia lógica:
+
+1. **Fig 1** — Validación individual: ¿tienen señal los 3 datasets por separado?
+2. **Fig 2** — Solapamiento: ¿qué genes son compartidos entre datasets?
+3. **Fig 3** — Pathways por dataset: ¿qué vías están consistentemente alteradas (GSEA Hallmarks)?
+4. **Fig 4** — GSVA: actividad de pathways a nivel de muestra individual (Fig3A) e integrada (Fig3B)
+5. **Fig 5** — Meta-análisis: síntesis cuantitativa de la evidencia génica entre los 3 estudios
+6. **Fig 6** — Meta-GSEA: pathways enriquecidos a partir del ranking meta-analítico
+
+### Figura 1 — COMPLETADA
+
+**Script:** `scripts/06_fig1_study_design.R`
+**Output:** `results/figures/fig1/Fig1.pdf` + `Fig1.png`
+**Pregunta:** *¿Son los 3 datasets individualmente válidos y muestran evidencia transcriptómica de resistencia a olaparib?*
+**Paneles:** A = diagrama de diseño | B = 3 PCAs | C = 3 volcanos | D = conteo de DEGs por dataset
+**Decisiones de estilo:** double_col 200mm, leyendas fuera a la derecha del último panel de cada fila, sin columna "Method" en Panel A (va en la sección Methods del paper). Ver lógica completa en `docs/GUIDE.md` → sección "Figura 1".
+
+### Figura 2 — PENDIENTE (próxima sesión)
+
+**Script a crear:** `scripts/07_fig2_overlap.R`
+**Pregunta:** *¿Existe una firma transcriptómica compartida entre las 3 líneas, o los cambios son mayoritariamente específicos de cada contexto?*
+
+**Paneles planificados:**
+
+| Panel | Fuente | Qué muestra |
+|-------|--------|-------------|
+| A | `results/figures/upset/DEGs_UP_UpSet_A2780_UWB_PEO1.png` (re-generar con tema unificado) | Estructura de solapamiento UP: exclusivos de 1 dataset, pares, triple |
+| B | `results/figures/upset/DEGs_DOWN_UpSet_A2780_UWB_PEO1.png` (re-generar) | Ídem DOWN |
+| C | **NUEVO — generar** | Heatmap ComplexHeatmap de los ~65 genes de la triple intersección, con todas las muestras de los 3 datasets, anotadas por dataset + condición |
+
+**Datos disponibles para Panel C:**
+
+- Genes: `results/tables/venn/DEGs_UP_triple_intersection_A2780_UWB_PEO1.tsv` + `DEGs_DOWN_triple_intersection_A2780_UWB_PEO1.tsv`
+- Expresión: `data/processed/GSE153867_A2780_FPKM.tsv` (A2780); re-leer raw para PEO1 y UWB (misma lógica que `01_differential_expression.R`)
+
+**Estilo:** mismo `theme_pub()` de Fig1, mismo preset double_col 200mm, leyendas fuera a la derecha. Los heatmaps individuales por dataset (script `02_2`) van a **suplementario**, no a figura principal.
+
+**Nota UpSet:** el UpSet plots actualmente usan el paquete `UpSetR`. Re-generar con `ComplexHeatmap::upset()` o `ggupset` para tener control total sobre estilo y que sea consistente con el resto de las figuras.
+
+### Figuras 3–6 — Por planificar en sesiones futuras
+
+Fuentes disponibles (ya generadas por el pipeline):
+
+- Fig 3 (GSEA Hallmarks): `results/figures/gsea_hallmarks/` — lollipops por dataset + heatmap NES integrado
+- Fig 4 (GSVA): `results/figures/gsva_heatmaps/Fig3A_*` + `Fig3B_*`
+- Fig 5 (Meta-análisis): `results/figures/meta_analysis/` — MetaVolcano + MetaLollipop + forest plots
+- Fig 6 (Meta-GSEA): `results/figures/meta_gsea/` — lollipops Hallmarks + Reactome
+
 ## Optional environment variable
 
 ```bash
