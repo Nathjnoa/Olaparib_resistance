@@ -117,6 +117,12 @@ run_a2780 <- function() {
   pca_df <- as_tibble(pca$x[, 1:2]) %>%
     mutate(sample_id = rownames(pca$x), condition = group)
 
+  # Save PCA coordinates for Fig1 assembly
+  .pv <- round(summary(pca)$importance["Proportion of Variance", 1:2] * 100, 1)
+  readr::write_tsv(dplyr::mutate(pca_df, pct_PC1 = .pv[[1]], pct_PC2 = .pv[[2]]),
+                   file.path(processed_dir, "pca_coords_A2780.tsv"))
+  rm(.pv)
+
   p_pca <- ggplot(pca_df, aes(x = PC1, y = PC2, color = condition, label = sample_id)) +
     geom_point(size = 3) +
     geom_text(vjust = -1, size = 3) +
@@ -226,6 +232,13 @@ run_uwb_brcadef <- function() {
     mutate(sample_id = rownames(pca$x)) %>%
     left_join(as_tibble(coldata) %>% dplyr::select(sample_id, resistance), by = "sample_id")
 
+  # Save PCA coordinates for Fig1 assembly
+  .pv <- round(summary(pca)$importance["Proportion of Variance", 1:2] * 100, 1)
+  readr::write_tsv(dplyr::rename(pca_df, condition = resistance) %>%
+                     dplyr::mutate(pct_PC1 = .pv[[1]], pct_PC2 = .pv[[2]]),
+                   file.path(processed_dir, "pca_coords_UWB.tsv"))
+  rm(.pv)
+
   p_pca_def <- ggplot(pca_df, aes(x = PC1, y = PC2, color = resistance, label = sample_id)) +
     geom_point(size = 3) +
     geom_text(vjust = -1, size = 3) +
@@ -325,6 +338,12 @@ run_peo1 <- function() {
   pca_df <- as_tibble(pca$x[, 1:2]) %>%
     mutate(sample_id = rownames(pca$x)) %>%
     left_join(meta, by = "sample_id")
+
+  # Save PCA coordinates for Fig1 assembly
+  .pv <- round(summary(pca)$importance["Proportion of Variance", 1:2] * 100, 1)
+  readr::write_tsv(dplyr::mutate(pca_df, pct_PC1 = .pv[[1]], pct_PC2 = .pv[[2]]),
+                   file.path(processed_dir, "pca_coords_PEO1.tsv"))
+  rm(.pv)
 
   p_pca_p <- ggplot(pca_df, aes(x = PC1, y = PC2, color = condition, label = sample_id)) +
     geom_point(size = 3) +

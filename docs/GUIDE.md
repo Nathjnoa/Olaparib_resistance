@@ -52,6 +52,27 @@ Para UWB1.289 se tienen **counts crudos** (número de lecturas por gen). Los cou
 
 Se prueba simultáneamente la diferencia en ~20,000 genes. Si se usa p < 0.05 sin corrección, el 5% de los genes (≈1,000) darían "significativo" por azar. La corrección de Benjamini-Hochberg controla la **tasa de falsos descubrimientos (FDR)**: si FDR < 0.05, se acepta que hasta el 5% de los genes declarados significativos podrían ser falsos positivos.
 
+### Figura 1: ¿Por qué es la primera figura y qué pregunta responde?
+
+**Pregunta:** *¿Son los tres datasets individualmente válidos, y cada uno muestra evidencia transcriptómica de resistencia a olaparib?*
+
+Esta es la pregunta obligatoria de cualquier meta-análisis antes de integrar nada. Si el lector no confía en los datos individuales, no confiará en el meta-resultado. El paper tiene un problema de credibilidad inherente: tres datasets con métodos distintos (limma-FPKM, limma-TPM, DESeq2-counts), tamaños de muestra muy diferentes (n=16 vs n=6 vs n=4) y fondos genéticos distintos (BRCA-WT, BRCA1-mut, BRCA1-def). La Figura 1 resuelve ese problema antes de avanzar al análisis integrado.
+
+**Por qué cada panel:**
+
+- **Panel A (diseño del estudio):** orienta al lector — tres líneas celulares, tres contextos BRCA distintos, mismo paradigma experimental (parental → resistente). Sin este mapa, los paneles siguientes se leen sin contexto.
+
+- **Panel B (PCA por dataset):** el PCA es la prueba visual de que la resistencia domina la varianza en cada dataset. Si parental y resistente no se separan en PC1 o PC2, el experimento no tiene señal suficiente para ningún análisis posterior. Que los tres datasets muestren separación — incluso UWB con solo n=4 — valida que la señal biológica existe.
+
+- **Panel C (volcano plots):** muestra la magnitud y la escala del cambio diferencial en cada dataset. La diferencia de escalas entre A2780 (>7,500 DEGs), PEO1 (~1,800) y UWB (~4,700) no es falla — es información. Le dice al lector que PEO1 tiene menos poder estadístico (n=2 vs n=4), anticipando por qué la intersección simple da pocos genes y por qué el meta-análisis es necesario.
+
+- **Panel D (conteo de DEGs):** cuantifica explícitamente esa diferencia de escala. Hace evidente que una intersección estricta (gen significativo en los 3) descartaría la mayoría de la señal real de PEO1. Justifica metodológicamente el meta-análisis de efectos aleatorios que viene después.
+
+**Lógica de secuencia:** solo después de que el lector acepta que los tres datasets individualmente tienen señal coherente tiene sentido mostrarles la intersección (Fig. 2), el análisis de pathways (Fig. 3/4) y el meta-análisis (Fig. 5). Si la Figura 1 no estuviera, el lector llegaría a los resultados integrados sin base para confiar en ellos.
+
+**Script:** `scripts/06_fig1_study_design.R`
+**Output:** `results/figures/fig1/Fig1.pdf` + `Fig1.png`
+
 ---
 
 ## Paso 2: Intersección de DEGs
