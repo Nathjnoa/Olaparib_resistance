@@ -31,10 +31,17 @@ docs/               — RUNBOOK, METHODS, OUTPUTS documentation
 02_2_heatmaps_topDEGs.R         — ComplexHeatmap top DEGs
 03_gsea_hallmarks.R             — GSEA per dataset + integrated NES heatmap
 04_1_gsva_analysis.R            — GSVA scores + limma DE
-04_2_gsva_heatmaps.R            — Fig3A (per-sample) + Fig3B (logFC)
+04_2_gsva_heatmaps.R            — per-sample Z(GSVA) + integrated logFC heatmaps
 05_1_meta_analysis.R            — REML RE meta-analysis + signatures
 05_2_meta_plots.R               — volcano + lollipop + forest plots
-05_3_meta_gsea.R                — fGSEA Hallmarks + Reactome on meta-rankings
+05_3_meta_gsea.R                — fGSEA Hallmarks + Reactome on meta-rankings (beta + z)
+
+— Publication figures (double-column, 200 mm, PDF + PNG 600 DPI) —
+06_fig1_study_design.R          — Fig 1: study design + PCA + volcanos + DEG counts
+07_fig2_overlap.R               — Fig 2: UpSet DEGs + triple-intersection heatmap
+08_fig3_hallmarks.R             — Fig 3: per-dataset GSEA lollipops + integrated NES heatmap
+09_fig4_gsva.R                  — Fig 4: per-sample Z(GSVA) heatmap + ΔGSVA logFC heatmap
+10_fig5_meta.R                  — Fig 5: meta-volcano + high-confidence lollipop + meta-GSEA
 ```
 
 ## Quickstart
@@ -44,6 +51,7 @@ conda activate omics-R
 cd ~/bioinfo/projects/olaparib_resistance
 export OLAPARIB_RESISTANCE_DIR=$(pwd)
 
+# Analysis pipeline
 Rscript scripts/01_differential_expression.R
 Rscript scripts/02_1_deg_intersections.R
 Rscript scripts/02_2_heatmaps_topDEGs.R
@@ -53,6 +61,13 @@ Rscript scripts/04_2_gsva_heatmaps.R
 Rscript scripts/05_1_meta_analysis.R
 Rscript scripts/05_2_meta_plots.R
 Rscript scripts/05_3_meta_gsea.R
+
+# Publication figures
+Rscript scripts/06_fig1_study_design.R
+Rscript scripts/07_fig2_overlap.R
+Rscript scripts/08_fig3_hallmarks.R
+Rscript scripts/09_fig4_gsva.R
+Rscript scripts/10_fig5_meta.R
 ```
 
 ## Documentation

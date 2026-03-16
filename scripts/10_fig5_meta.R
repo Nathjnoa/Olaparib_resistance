@@ -181,11 +181,8 @@ p_vol <- ggplot(meta, aes(x = beta_meta, y = mlog10_fdr)) +
   scale_x_continuous(breaks = seq(-5, 5, 1)) +
   scale_y_continuous(limits = c(0, 102), breaks = c(0, 25, 50, 75, 100)) +
   labs(
-    title    = "Meta-analysis random-effects",
-    subtitle = paste0("n genes: UP=", n_up, "  DOWN=", n_down,
-                      " (FDR<0.05) | ", nrow(highconf), " high-confidence (k=3, I\u00b2<50%)"),
-    x        = expression(beta[meta]~(log[2]*FC*","~Resistant-Parental)),
-    y        = expression(-log[10](FDR)~~(capped~at~100))
+    x = expression(beta[meta]~(log[2]*FC*","~Resistant-Parental)),
+    y = expression(-log[10](FDR)~~(capped~at~100))
   ) +
   theme_pub() +
   theme(
@@ -231,12 +228,8 @@ p_lollipop <- ggplot(lollipop_df,
                           override.aes = list(color = "grey40"))
   ) +
   labs(
-    title    = "High-confidence genes",
-    subtitle = paste0("k=3 datasets | I\u00b2<50% | FDR<0.05\n",
-                      "n=", sum(lollipop_df$direction == "UP"),   " UP  +  ",
-                           sum(lollipop_df$direction == "DOWN"), " DOWN"),
-    x        = expression(beta[meta]~(log[2]*FC)),
-    y        = NULL
+    x = expression(beta[meta]~(log[2]*FC)),
+    y = NULL
   ) +
   theme_pub() +
   theme(
@@ -275,11 +268,8 @@ p_gsea <- ggplot(gsea_h,
   scale_x_continuous(limits = c(-nes_lim, nes_lim),
                      breaks = seq(-2, 2, 0.5)) +
   labs(
-    title    = "Meta-GSEA Hallmarks",
-    subtitle = paste0("Ranking: pooled effect size (beta_meta)  |  ",
-                      "FDR<0.05  |  n=", nrow(gsea_h), " pathways"),
-    x        = "Normalized Enrichment Score (NES)",
-    y        = NULL
+    x = "Normalized Enrichment Score (NES)",
+    y = NULL
   ) +
   theme_pub() +
   theme(
@@ -312,7 +302,7 @@ draw_fig5 <- function() {
   # Row 1: volcano + lollipop side by side
   pushViewport(viewport(layout.pos.row = 1))
   row1 <- (p_vol | p_lollipop) +
-    plot_layout(widths = c(0.45, 0.55)) +
+    plot_layout(widths = c(0.54, 0.46)) +
     plot_annotation(tag_levels = list(c("A", "B"))) &
     theme(plot.tag = element_text(size = 9, face = "bold"))
   print(row1, newpage = FALSE)

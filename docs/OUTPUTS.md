@@ -184,6 +184,66 @@ Run twice: `stat=z` (default) and `stat=beta`.
 
 ---
 
+---
+
+## `06_fig1_study_design.R`
+
+**Figures** (`results/figures/fig1/`):
+
+- `Fig1.pdf` — publication figure (200 × 220 mm)
+- `Fig1.png` — 600 DPI raster
+
+**Layout**: Row 1: Panel A (study design table) | Panels B (3 PCAs). Row 2: Panel C (3 volcanos) | Panel D (DEG bar chart).
+
+---
+
+## `07_fig2_overlap.R`
+
+**Figures** (`results/figures/fig2/`):
+
+- `Fig2.pdf` — publication figure (200 × 260 mm)
+- `Fig2.png` — 600 DPI raster
+
+**Layout**: Panel A (UpSet DEGs UP) | Panel B (UpSet DEGs DOWN) | Panel C (heatmap 65 triple-intersection genes, 26 samples, Z-score within-dataset).
+
+---
+
+## `08_fig3_hallmarks.R`
+
+**Figures** (`results/figures/fig3/`):
+
+- `Fig3.pdf` — publication figure (200 × 190 mm)
+- `Fig3.png` — 600 DPI raster
+
+**Layout**: Row 1: Panels A/B/C (GSEA lollipops per dataset, top 5 each direction, unified X axes). Row 2: Panel D (integrated NES heatmap, 17 Hallmarks FDR < 0.1 in ≥ 2 datasets).
+
+---
+
+## `09_fig4_gsva.R`
+
+**Figures** (`results/figures/fig4/`):
+
+- `Fig4.pdf` — publication figure (200 × 150 mm)
+- `Fig4.png` — 600 DPI raster
+
+**Layout**: Panel A (per-sample Z(GSVA) heatmap, 26 columns, row order from hclust) | Panel B (ΔGSVA logFC integrated, 3 dataset columns, `*` FDR < 0.05, `·` FDR < 0.10).
+Row order is pre-computed with `hclust` on Panel A matrix and passed to Panel B to synchronize both heatmaps.
+
+---
+
+## `10_fig5_meta.R`
+
+**Figures** (`results/figures/fig5/`):
+
+- `Fig5.pdf` — publication figure (200 × 220 mm)
+- `Fig5.png` — 600 DPI raster
+
+**Layout**: Row 1 (57%): Panel A (meta-volcano, beta_meta vs -log10(FDR), 20 lollipop genes labeled) | Panel B (high-confidence gene lollipop, k=3 I²<50%, top 10 UP + 10 DOWN). Row 2 (43%): Panel C (meta-GSEA Hallmarks full width, ranked by beta_meta, 8 pathways FDR < 0.05).
+
+**Note**: meta-GSEA uses `beta_meta` ranking (from `metaGSEA_HALLMARKS_BETA.tsv`), not `z_meta`. The z_meta ranking yields only 1 significant Hallmark due to high heterogeneity (I²=96%); beta_meta captures the average direction of effect and gives 8 pathways at FDR < 0.05.
+
+---
+
 ## `scripts_no_usados/` — outputs still in results
 
 These scripts are in `scripts_no_usados/` but their outputs remain in `results/figures/sankey/`:

@@ -53,9 +53,27 @@ Downstream signatures (UP/DOWN gene lists, high-confidence set: FDR < 0.05 + I²
 
 **SE derivation note**: The approximation SE ≈ |log2FC| / |t| is exact for the moderated t-statistic in limma, where t = log2FC / SE by definition. This is the standard derivation used in multi-study transcriptomic meta-analyses.
 
+## Meta-GSEA ranking — beta_meta vs z_meta
+
+Gene-level meta-GSEA was performed using two alternative rankings: (1) z_meta = beta_meta / SE_meta (standardized effect size), and (2) beta_meta (unstandardized pooled log2FC). Given the high heterogeneity of the meta-analysis (median I² = 96%), the z_meta ranking is dominated by between-study variance and produces only 1 significant Hallmark pathway (KRAS_SIGNALING_DN, FDR = 0.0099). The beta_meta ranking captures the average direction of the effect and yields 8 significant Hallmark pathways at FDR < 0.05. The beta_meta-based meta-GSEA is reported in the main figures; both rankings are available in `results/tables/meta_gsea/`.
+
+## Publication figures
+
+Five publication-quality figures (double-column format, 200 mm wide, PDF + PNG at 600 DPI) were generated using ggplot2, patchwork, ComplexHeatmap, and grid (R):
+
+| Figure | Script | Question answered |
+|--------|--------|-------------------|
+| Fig 1 | `06_fig1_study_design.R` | Are the 3 datasets individually valid and show transcriptomic evidence of olaparib resistance? |
+| Fig 2 | `07_fig2_overlap.R` | Is there a shared transcriptomic signature across all 3 lines, or are changes mostly context-specific? |
+| Fig 3 | `08_fig3_hallmarks.R` | Do transcriptomic changes converge on the same biological programs across the 3 models? |
+| Fig 4 | `09_fig4_gsva.R` | Is the differential pathway activation from GSEA consistent at the individual sample level? |
+| Fig 5 | `10_fig5_meta.R` | What is the integrated transcriptomic signature of olaparib resistance and what biological programs does it implicate? |
+
+All figure scripts source `scripts/00_config.R` for centralized parameters and color palettes.
+
 ## Visualizations
 
-Volcano plots, PCA, Venn/UpSet diagrams, ComplexHeatmap heatmaps (Z-score and logFC), lollipop plots, and forest plots were generated. Figures were exported as PNG (300 DPI) and PDF. Thresholds used: FDR < 0.05 (primary significance), FDR < 0.10 (visualization), |log2FC| ≥ 0.584 (FC ≥ 1.5) for intersection lists.
+Volcano plots, PCA, Venn/UpSet diagrams, ComplexHeatmap heatmaps (Z-score and logFC), lollipop plots, and forest plots were generated. Publication figures were exported as PDF (vector) and PNG (600 DPI). Thresholds used: FDR < 0.05 (primary significance), FDR < 0.10 (visualization), |log2FC| ≥ 0.584 (FC ≥ 1.5) for intersection lists.
 
 ## Software and computational environment
 

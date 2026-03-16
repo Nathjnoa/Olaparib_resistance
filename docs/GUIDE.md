@@ -113,6 +113,55 @@ Esta pregunta surge directamente de la Figura 2. La intersección a nivel de gen
 
 ---
 
+### Figura 4: ¿Qué pregunta responde?
+
+**Pregunta:** *¿La activación diferencial de pathways observada en GSEA (Fig 3) es consistente a nivel de muestra individual, y se confirma con el marco estadístico independiente GSVA + limma?*
+
+GSEA da una puntuación grupal (resistentes vs. parentales). GSVA da una puntuación por muestra individual, lo que permite ver heterogeneidad intra-grupo. La Figura 4 combina las dos perspectivas: el Panel A muestra si cada muestra individual tiene el patrón esperado; el Panel B confirma si ese patrón es estadísticamente significativo al nivel de dataset.
+
+**Por qué cada panel:**
+
+- **Panel A (heatmap per-sample Z(GSVA)):** 26 columnas (todas las muestras), filas = pathways core (recurrentes en ≥2 datasets, FDR < 0.10 GSVA+limma). El Z-score se calcula dentro de cada dataset por separado para hacer comparables FPKM, TPM y counts. El clustering de filas (hclust completo) está pre-calculado y se comparte con el Panel B para mantener el mismo orden de pathways. Las columnas NO tienen clustering: están fijadas en orden Dataset → Condición, lo que permite ver visualmente la separación parental/resistente en los 3 contextos.
+
+- **Panel B (ΔGSVA logFC integrado):** 3 columnas = 3 datasets, mismas filas que A (mismo orden). Código de color: rojo = activado en resistentes, azul = suprimido. Asteriscos (`*` FDR < 0.05) y punto medio (`·` FDR < 0.10) indican significancia estadística del GSVA+limma. Permite ver de inmediato qué pathways son consistentes entre datasets y cuáles son específicos de uno.
+
+**Hallazgo principal visible:** IFN-α e IFN-γ se activan en A2780 (FDR < 0.05) pero se suprimen en UWB1.289 (FDR < 0.05) — heterogeneidad de dirección directa. PEO1 muestra logFC cercanos a 0 para la mayoría de pathways recurrentes: los más convergentes son A2780 + UWB.
+
+**Decisiones de implementación:** dos objetos `Heatmap` independientes en viewports separados (`grid.layout` 65%/35%). El clustering de filas se pre-computa con `hclust(dist(mat_z), method="complete")` y se pasa como `cluster_rows=row_clust` a ht_A y `cluster_rows=FALSE, row_order=row_ord` a ht_B.
+
+**Script:** `scripts/09_fig4_gsva.R`
+**Output:** `results/figures/fig4/Fig4.pdf` + `Fig4.png`
+
+---
+
+### Figura 5: ¿Qué pregunta responde?
+
+**Pregunta:** *¿Cuál es la firma transcriptómica integrada de resistencia a olaparib a través de los 3 modelos, y qué programas biológicos implica?*
+
+Esta figura es la síntesis cuantitativa del proyecto. Después de mostrar la evidencia por dataset (Figs 1–3) y la actividad de pathways por muestra (Fig 4), la Figura 5 responde: si integramos formalmente la evidencia estadística de los 3 estudios mediante meta-análisis, ¿qué firma emerge?
+
+**Por qué cada panel:**
+
+- **Panel A (meta-volcano):** el eje X es beta_meta (log2FC pooled del meta-análisis), el eje Y es -log10(FDR). Muestra la magnitud y la confianza del estimado integrado para cada gen. Los 20 genes del Panel B están etiquetados para que el lector pueda cruzar información entre los dos paneles. El número de genes significativos (UP/DOWN) aparece en la leyenda de colores.
+
+- **Panel B (lollipop high-confidence):** top 10 UP + 10 DOWN del subconjunto high-confidence: genes con k=3, FDR < 0.05, I² < 50% y concordancia = 1 (361 genes en total; los 20 más extremos se muestran). El tamaño del punto codifica -log10(FDR). La barra punteada separa DOWN de UP. Este panel muestra los candidatos más robustos para validación funcional o uso como biomarcadores.
+
+- **Panel C (meta-GSEA Hallmarks, beta_meta ranking, ancho completo):** fGSEA aplicado al ranking por beta_meta (no z_meta). La elección de beta_meta es deliberada: el ranking z_meta con I²=96% produce solo 1 pathway significativo (KRAS_SIGNALING_DN, FDR=0.0099) porque la varianza entre estudios domina. El ranking beta_meta da 8 pathways a FDR < 0.05, capturando la dirección promedio del efecto aunque la magnitud varíe entre líneas. Los 8 pathways: Estrogen Response Late/Early, KRAS Signaling DN, Xenobiotic Metabolism, E2F Targets, P53 Pathway (UP en resistentes); IL2-STAT5, EMT (DOWN — efecto ponderado con heterogeneidad alta).
+
+**Lógica de secuencia:** la Figura 5 cierra el argumento del paper. El lector llega aquí habiendo visto evidencia por dataset, convergencia de pathways, y heterogeneidad muestra-a-muestra. La Fig 5 le dice: pese a esa heterogeneidad, hay una firma estadísticamente robusta de 361 genes y 8 programas biológicos que se replican al nivel del efecto promedio.
+
+**Decisiones de implementación:**
+- `grid.layout(nrow=2, heights=unit(c(220*0.57, 220*0.43),"mm"))` para Row 1 (A+B) y Row 2 (C)
+- Row 1 compuesto con patchwork: `(p_vol | p_lollipop) + plot_layout(widths=c(0.54, 0.46))`
+- Etiquetas del volcano = mismos 20 genes que el lollipop → coherencia visual entre paneles
+- Forest plots individuales movidos a Supplementary (no en figura principal)
+- Sin títulos de panel individuales (solo tags A, B, C)
+
+**Script:** `scripts/10_fig5_meta.R`
+**Output:** `results/figures/fig5/Fig5.pdf` + `Fig5.png`
+
+---
+
 ## Paso 2: Intersección de DEGs
 
 ### ¿Qué se hace?
