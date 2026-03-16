@@ -1,7 +1,12 @@
 scripts/scripts_no_usados/
 
 data/
-results/
+results/*
+!results/figures/
+results/figures/*
+!results/figures/fig1/
+!results/figures/fig2/
+!results/figures/fig3/
 logs/
 
 VennDiagram*.log
