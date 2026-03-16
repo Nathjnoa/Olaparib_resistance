@@ -7,6 +7,8 @@ results/figures/*
 !results/figures/fig1/
 !results/figures/fig2/
 !results/figures/fig3/
+!results/figures/fig4/
+!results/figures/fig5/
 logs/
 
 VennDiagram*.log

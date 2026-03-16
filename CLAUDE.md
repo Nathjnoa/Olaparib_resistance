@@ -107,7 +107,29 @@ La historia del paper sigue esta secuencia lógica:
 **Paneles:** A/B/C = lollipops GSEA Hallmarks por dataset (top 5 por dirección, FDR<0.05, ejes X unificados) | D = heatmap NES integrado transpuesto (datasets=filas, pathways=columnas), 17 Hallmarks con FDR<0.1 en ≥2 datasets, asteriscos de significancia, anotación BRCA status
 **Decisiones de estilo:** double_col 200×190 mm, pathways abreviados, heatmap transpuesto para aprovechar ancho horizontal. Ver lógica completa en `docs/GUIDE.md` → sección "Figura 3".
 
-### Figuras 4–6 — Por planificar en sesiones futuras
+### Figura 4 — COMPLETADA
+
+**Script:** `scripts/09_fig4_gsva.R`
+**Output:** `results/figures/fig4/Fig4.pdf` + `Fig4.png`
+**Pregunta:** *¿La activación diferencial de pathways observada en GSEA (Fig 3) es consistente a nivel de muestra individual, y se confirma con el marco estadístico independiente GSVA + limma?*
+**Paneles:** A = heatmap per-sample Z(GSVA) (26 muestras, anotaciones Dataset/Condition/BRCA, sin column names, columnas sin clustering, filas con hclust) | B = ΔGSVA logFC integrado (3 datasets como columnas, mismos pathways, asteriscos FDR<0.05, puntos FDR<0.10)
+**Decisiones de estilo:** double_col 200×150 mm, layout 65%/35% viewports, row order pre-computado con hclust para sincronizar A y B. Ver lógica en `docs/GUIDE.md` → sección "Figura 4".
+**Hallazgo clave visible:** IFN-α e IFN-γ responden en direcciones opuestas (UP en A2780 *, DOWN en UWB1.289 *) — heterogeneidad de dirección directamente visible. PEO1 muestra logFC cercanos a 0 para la mayoría de pathways recurrentes (los convergentes son principalmente A2780 + UWB).
+
+### Figura 5 — COMPLETADA
+
+**Script:** `scripts/10_fig5_meta.R`
+**Output:** `results/figures/fig5/Fig5.pdf` + `Fig5.png`
+**Pregunta:** *¿Cuál es la firma transcriptómica integrada de resistencia a olaparib a través de los 3 modelos, y qué programas biológicos implica?*
+**Paneles:** A = MetaVolcano (beta_meta vs -log10(FDR), etiquetados los mismos 20 genes del lollipop para coherencia visual) | B = Lollipop top genes high-confidence (k=3, I²<50%, n=361 total, mostrados top 10 UP + 10 DOWN) | C = Meta-GSEA Hallmarks full width (ranking beta_meta, 8 pathways FDR<0.05)
+**Decisiones clave:**
+- Meta-GSEA usa ranking **beta_meta** (NO z_meta): z solo da 1 pathway (KRAS_DN, FDR=0.01) por alta heterogeneidad (I²=96%); beta da 8 pathways (FDR<0.05) que capturan la dirección promedio del efecto
+- Labels del volcano = mismos 20 genes del lollipop → el lector puede cruzar información entre paneles A y B
+- Forest plots → Supplementary (no en figura principal)
+**Hallazgos clave:**
+- n=613 UP / 613 DOWN genes (FDR<0.05); 361 high-confidence (k=3, I²<50%)
+- Panel C: Estrogen response, KRAS signaling DN, Xenobiotic metabolism, E2F/P53 UP en resistentes; EMT e IL2-STAT5 DOWN (dirección ponderada — heterogeneidad alta entre modelos)
+- Panel B DOWN más destacados: LTBP1, FAM167A, USP18, DNAJB11, BAMBI; UP: URB1, JUN, NEDD9
 
 Fuentes disponibles (ya generadas por el pipeline):
 
